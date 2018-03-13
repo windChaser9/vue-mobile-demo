@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width = device-width,initial-scale=1">
+    <title>菜单</title>
+    <link type="text/css" rel="styleSheet" href="../../plugins/layer_mobile/need/layer.css">
+    <link rel="stylesheet" href="../../css/home.css">
+</head>
+
+<body>
+    <div class="heading">
+        <div>
+            <a class="top_icon">
+                <span class="icon">ぶ</span>
+            </a>
+            <span class="top_theme">自定义菜单</span>
+        </div>
+    </div>
+    <div class="container">
+        <div class="content">
+            <label for="name">子菜单名称:</label>
+            <br>
+            <input class="shuru" type="text" placeholder="请输入名称">
+            <div class="child-menu">
+                <label>子菜单类型:</label>
+                <br>
+                <input class="magic-radio" type="radio" name="datatype" id="r1" value="view">
+                <label for="r1">view</label>
+                <input class="magic-radio" type="radio" name="datatype" id="r2" value="click" checked>
+                <label for="r2">click</label>
+                <label for="url" id="forurl">请输入对应信息:</label>
+                <textarea name="shuru" class="details"></textarea>
+            </div>
+            <p id="info"></p>
+            <div class="buttons">
+                <button class="yeah">确认</button>
+                <button class="delMenu">删除菜单</button>
+                <button class="delete">删除所有</button>
+            </div>
+        </div>
+        <div class="left">
+            <div class="header">
+                <div class="title">菜单</div>
+                <div class="back">
+                    <span class="icon">亃</span>
+                </div>
+            </div>
+            <div class="menu">
+                <b class="icon" id="updata">噴</b>
+                <div class="menuList" id="menuList" droppable="true">
+                    <span id="cre1">
+                        <p>添加菜单</p>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="main">
+            <div class="top_name">
+                <span class="menuName">子菜单名称</span>
+            </div>
+            <div style="position: absolute; left: -15px; bottom: 30px;width: 0; height: 0; border-bottom: 10px solid transparent;border-right: 15px solid #e7e7eb;border-top: 10px solid transparent;"></div>
+        </div>
+    </div>
+    <canvas width="1440", height="778"></canvas>
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../plugins/layer_mobile/layer.js"></script>
+    <script>
+    $(function() {
+        // 定义拖拽事件
+        function DragEvent() {
+            this.menuList = $('#menuList'); //第一个拖拽容器，底部导航栏
+            this.dropUl = $('.drop'); // 第二类拖拽容器，显示列表
+            this.parentEle = ''; // 拖拽元素的父元素
+            this.startEle = ''; // 拖拽开始元素
+            this.endEle = ''; // 拖拽结束元素
+        }
+        // 给拖拽容器和元素绑定事件
+        DragEvent.prototype = {
+            bindEvent: function() {
+                var that = this;
+                that.menuList.on('dragstart', 'span', function(event) {
+                    that.dragstart_handler(event);
+                    event.originalEvent.dataTransfer.setData('text/plain', this.id);
+                });
+                that.dropUl.on('dragstart', 'li', function(event) {
+                    that.dragover_handler(event);
+                    event.originalEvent.dataTransfer.setData('text/plain', this.id);
+                });
+                that.menuList.on('dragover', function(event) {
+                    that.dragover_handler(event);
+                });
+                that.dropUl.on('dragover', function(event) {
+                    that.dragover_handler(event);
+                });
+                that.menuList.on('drop', function(event) {
+                    that.drop_handler(event);
+                });
+                that.dropUl.on('drop', function(event) {
+                    that.drop_handler(event);
+                });
+            },
+            // 开始拖拽事件
+            dragstart_handler: function(ev) {
+                this.startEle = $(ev.target);
+                this.parentEle = $(ev.target).parent();
+            },
+            // 拖拽过程事件
+            dragover_handler: function(ev) {
+                ev.preventDefault();
+            },
+            // 拖拽结束事件
+            drop_handler: function(ev) {
+                ev.preventDefault();
+                this.endEle = ev.target.tagName === "span" ? $(ev.target) : $(ev.target.parentNode);
+                var prevEle = this.endEle.prev();
+                var nextEle = this.endEle.next();
+                // 两者相邻，结束元素位于开始元素后部
+                if (this.endEle[0] === this.startEle.next()[0]) {
+                    if (nextEle.length === 0) {
+                        this.parentEle.append(this.startEle);
+                    } else {
+                        this.startEle.insertBefore(nextEle);
+                    }
+                    // 两者相邻，结束元素位于开始元素前部
+                } else if (this.startEle[0] === this.endEle.next()[0]) {
+                    if (prevEle.length === 0) {
+                        this.parentEle.prepend(this.startEle);
+                    } else {
+                        this.startEle.insertBefore(this.endEle);
+                    }
+                    // 两者不相邻，针对列表li元素
+                } else {
+                    if (prevEle.length === 0) {
+                        this.parentEle.prepend(this.startEle);
+                    } else if (nextEle.length === 0) {
+                        this.parentEle.append(this.startEle);
+                    } else if (this.startEle[0].offsetTop < this.endEle[0].offsetTop) {
+                        this.startEle.insertBefore(nextEle);
+                    } else {
+                        this.startEle.insertBefore(this.endEle);
+                    }
+                }
+            }
+        }
+        var layerEvent = {
+            /**
+             * [从屏幕中弹出消息框，两秒后自动关闭]
+             * @param  {[string]} msg [弹出消息]
+             */
+            layerAlertMsg: function(_msg) {
+                if (_msg === undefined || _msg === '')
+                    return;
+                layer.open({
+                    content: _msg,
+                    time: 2, // 2秒后自动关闭
+                    shadeClose: false,
+                });
+                // ios设备弹出窗宽度、高度、字体大小均固定
+                var ratio = window.devicePixelRatio >= 3 ? 2 / 3 : 1 / 2;
+                $('.layui-m-layerchild').css({ 'width': 340 * ratio + 'px', 'font-size': 26 * ratio + 'px', 'border-radius': 25 * ratio + 'px' });
+                $('.layui-m-layercont').css({ 'padding': 50 * ratio + 'px ' + 20 * ratio + 'px', 'line-height': 30 * ratio + 'px' });
+            },
+            /**
+             * [询问框，有两个回调]
+             * @param  {[string]} msg         [弹框信息]
+             * @param  {[array]} btn         [两个按钮名称数组]
+             * @param  {[function]} yesCallback [确认时回调]
+             * @param  {[function]} noCallback  [取消时回调]
+             */
+            layerConfirm: function(_msg, btn, yesCallback, noCallback) {
+                if (_msg === undefined || _msg === '')
+                    return;
+                layer.open({
+                    content: _msg,
+                    btn: btn,
+                    yes: function(index) {
+                        yesCallback && yesCallback();
+                        layer.close(index);
+                    },
+                    no: function() {
+                        noCallback && noCallback();
+                    },
+                });
+                // ios设备弹出窗宽度、高度、字体大小均固定
+                var ratio = window.devicePixelRatio >= 3 ? 2 / 3 : 1 / 2;
+                $('.layui-m-layerchild').css({ 'width': 340 * ratio + 'px', 'font-size': 26 * ratio + 'px', 'border-radius': 25 * ratio + 'px' });
+                $('.layui-m-layercont').css({ 'padding': 50 * ratio + 'px ' + 20 * ratio + 'px', 'line-height': 30 * ratio + 'px' });
+                $('.layui-m-layerbtn span').css('font-size', 32 * ratio + 'px');
+                $('.layui-m-layerbtn').css({ 'line-height': 85 * ratio + 'px', 'height': 85 * ratio + 'px' });
+            }
+        };
+        var FLAG = 0,
+            SHOW_FLAG = 0,
+            DONE_FLAG = 0,
+            FOCUS_1 = 1,
+            index = 1, //第index个一级子菜单
+            template = '<li class="sect"><p>添加名称</p><ins class="none"></ins><sub class="none"></sub></li>';
+        var pageEvents = {
+            // 创建一级目录
+            handler: function() {
+                var setData = function(num) {
+                    if (index === num && FLAG === 0) {
+                        pageEvents.create1(index);
+                    } else {
+                        pageEvents.change(num);
+                        $("#drop" + num).show();
+                    }
+                    if ($('#drop' + num).children().length === 1) {
+                        SHOW_FLAG = 1;
+                        DONE_FLAG = 1;
+                    } else {
+                        SHOW_FLAG = 0;
+                        DONE_FLAG = 0;
+                    }
+                    pageEvents.showForm();
+                }
+                $("#menuList").delegate('#cre1 p', 'click', function() {
+                    setData(1);
+                }).delegate('#cre2 p', 'click', function() {
+                    setData(2);
+                }).delegate('#cre3 p', 'click', function() {
+                    setData(3);
+                });
+            },
+            // 创建二级目录
+            secHandler: function() {
+                $("#menuList").delegate('#pos1', 'click', function() {
+                    pageEvents.create2($(this));
+                    $('#cre1 >sub, #cre1 >ins').html('');
+                }).delegate('#pos2', 'click', function() {
+                    pageEvents.create2($(this));
+                    $('#cre2 >sub, #cre2 >ins').html('');
+                }).delegate('#pos3', 'click', function() {
+                    pageEvents.create2($(this));
+                    $('#cre3 >sub, #cre3 >ins').html('');
+                }).delegate('.drop li', 'click', function() {
+                    if ($(this).attr('id') === undefined) {
+                        DONE_FLAG = 0;
+                        SHOW_FLAG = 1;
+                        $('.left').css('zIndex', 3);
+                        $(this).parents('span').find('.sect').removeClass('sect');
+                        $(this).addClass('sect');
+                        $('.delMenu').text('删除子菜单');
+                        pageEvents.showForm();
+                    }
+                });
+            },
+            clickEvent: function() {
+                var isSave = false;
+                $('.left').on('click', function(event) {
+                    if(event.target.className === 'left') {
+                        event.preventDefault();
+                        $('.left').css('zIndex', 1);
+                        $('.drop').hide();
+                        $('.triangle').hide();
+                    }
+                })
+                // 上传数据
+                $('#updata').on('click', function() {
+                    var data = pageEvents.saveData();
+                    if (!isSave) return layerEvent.layerAlertMsg('请先确认数据信息！');
+                    $.post("create.php", {
+                        data: data
+                    }, function(res) {
+                        var texts = res.split('{"button":')[0].split('"errmsg":"')[1].split('"}')[0];
+                        if (texts === 'ok') {
+                            layerEvent.layerAlertMsg('操作成功');
+                        } else {
+                            layerEvent.layerAlertMsg('操作失败');
+                        }
+                    });
+                });
+
+                $(".yeah").on('click', function() {
+                    isSave = true;
+                    pageEvents.getInput();
+                    layerEvent.layerAlertMsg('已确认成功，请点击菜单左下角提交！');
+                });
+                $(".delMenu").on('click', function() {
+                    layerEvent.layerConfirm('确定删除已选择菜单？', ['确定', '取消'], function() {
+                        if (SHOW_FLAG === 0) {
+                            pageEvents.remove1();
+                        } else if (DONE_FLAG === 1) {
+                            pageEvents.remove1();
+                        } else {
+                            pageEvents.remove2();
+                        }
+                        // var data = pageEvents.saveData();
+                        // $.post("create.php", {
+                        //     data: data
+                        // }, function(res) {
+                        //     var texts = res.split('{"button":')[0].split('"errmsg":"')[1].split('"}')[0];
+                        //     if (texts === 'ok') {
+                        //         layerEvent.layerAlertMsg('删除成功');
+                        //     } else {
+                        //         layerEvent.layerAlertMsg('删除失败');
+                        //     }
+                        // });
+                    }, function() {
+                        return;
+                    });
+                });
+                $('.delete').on('click', function() {
+                    layerEvent.layerConfirm('确定删除所有菜单？', ['确定', '取消'], function() {
+                        $.post("delete.php", {}, function(res) {
+                            var texts = res.split('{"button":')[0].split('"errmsg":"')[1].split('"}')[0];
+                            if (texts === 'ok') {
+                                layerEvent.layerAlertMsg('删除成功');
+                            } else {
+                                layerEvent.layerAlertMsg('删除失败');
+                            }
+                        });
+                    }, function() {
+                        return;
+                    })
+                });
+            },
+            /**
+             * 改变焦点事件
+             */
+            change: function(num) {
+                $('#menuList p').removeClass('sect');
+                $('#cre' + num + ' >p').addClass('sect');
+                $(".drop li").removeClass('sect');
+                $('.drop').hide();
+                $('.triangle').hide();
+                $('#drop' + num).show();
+                $('.triangle' + num).show();
+                $('.left').css('zIndex', 3);
+                FOCUS_1 = num;
+            },
+            /**
+             * 创建一级目录
+             */
+            create1: function(num) {
+                if (FLAG === 0) {
+                    $('#menuList p').removeClass('sect');
+                    $('#cre' + num + ' p').html('添加名称').addClass('sect');
+                    $('.drop').hide();
+                    $('.triangle').hide();
+                    $(".drop li").removeClass('sect');
+                    FOCUS_1 = num;
+                    $('#cre' + num).attr('draggable', 'true').append('<ins class="none"></ins><sub class="none"></sub><i class="triangle triangle' + num + '"></i><ul class="drop" id="drop' + num + '" droppable="true"><li id="pos' + num + '">+</li></ul>');
+                    $('#drop' + num).show();
+                    $('.triangle' + num).show();
+                    if (num < 3) {
+                        //创建添加一级目录按钮
+                        $('#cre' + index).after('<span id="cre' + (num + 1) + '"><p>+</p></span>')
+                    }
+                    index++;
+                }
+            },
+            create2: function(node) {
+                DONE_FLAG = 0;
+                SHOW_FLAG = 1;
+                $('#menuList p').removeClass('sect');
+                $(".drop li").removeClass('sect');
+                if (node.parent().children().length < 5) {
+                    $(template).insertBefore(node);
+                } else {
+                    node.replaceWith(template);
+                }
+                pageEvents.showForm();
+            },
+            ToCDB: function(str) {
+                var tmp = '';
+                for (var i = 0; i < str.length; i++) {
+                    if (str.charCodeAt(i) > 65248 && str.charCodeAt(i) < 65375) {
+                        tmp += String.fromCharCode(str.charCodeAt(i) - 65248);
+                    } else if (!str.charCodeAt(i)) {
+                        tmp += str[i];
+                    } else {
+                        tmp += String.fromCharCode(str.charCodeAt(i));
+                    }
+                }
+                return tmp;
+            },
+            /**
+             * 目录点击初始化数据
+             */
+            init: function() {
+                var name, type, s, shuru;
+                $("#info").hide();
+                $("input:checked").val('view');
+                if (SHOW_FLAG === 0) {
+                    $(".child-menu").hide();
+                    name = ($('#menuList p[class = sect]').html() === undefined) ? '添加名称' : $('#menuList p[class = sect]').html();
+                    if (name === '添加名称') {
+                        name = '';
+                    }
+                    $(".shuru").val(pageEvents.ToCDB(name));
+                    $('.menuName').text(pageEvents.ToCDB(name));
+                } else if (DONE_FLAG === 0) {
+                    $(".child-menu").show();
+                    name = ($('.drop li[class = sect] p').html() === undefined) ? '' : $('.drop li[class = sect] p').html();
+                    shuru = ($('.drop li[class = sect] sub').text() === undefined) ? '' : $('.drop li[class = sect] sub').text();
+                    type = ($('.drop li[class = sect] ins').html() === undefined) ? '' : $('.drop li[class = sect] ins').html();
+                    if (name === '添加名称') {
+                        name = '';
+                    }
+                    $(".shuru").val(pageEvents.ToCDB(name));
+                    $('.menuName').text(pageEvents.ToCDB(name));
+                    $(".details").val(shuru);
+                    s = (type === 'click') ? 1 : 0;
+                    $('input:radio[name=datatype]')[s].checked = true;
+                } else {
+                    $(".child-menu").show();
+                    name = ($('#menuList p[class = sect]').html() === undefined) ? '添加名称' : $('#menuList p[class = sect]').html();
+                    shuru = ($('#menuList span >p[class = sect]').siblings('sub').text() === undefined) ? '' : $('#menuList span >p[class = sect]').siblings('sub').text();
+                    type = ($('#menuList span >p[class = sect]').siblings('ins').html() === undefined) ? '' : $('#menuList span >p[class = sect]').siblings('ins').html();
+                    if (name === '添加名称') {
+                        name = '';
+                    }
+                    $(".shuru").val(pageEvents.ToCDB(name));
+                    $('.menuName').text(pageEvents.ToCDB(name));
+                    $(".details").val(shuru);
+                    s = (type === 'click') ? 1 : 0;
+                    $('input:radio[name=datatype]')[s].checked = true;
+                }
+            },
+            /**
+             * 显示表单
+             */
+            showForm: function() {
+                if (SHOW_FLAG === 0) {
+                    $(".child-menu").hide();
+                } else if (SHOW_FLAG === 1) {
+                    $(".child-menu").show();
+                }
+                this.init();
+            },
+            /**
+             * 删除一级目录
+             */
+            remove1: function() {
+                var num = $('#menuList').children().length,
+                    $next = $('#menuList p[class = sect]').parent().next();
+                if ($next.length === 0 || $next.find('p:first').text() === '+') {
+                    $next = $('#menuList p[class = sect]').parent().prev();
+                } else {
+                    $next = $('#menuList p[class = sect]').parent().next();
+                }
+                console.log($next);
+                $('#menuList p[class = sect]').parent().remove();
+                if (index === 4) {
+                    index = 3;
+                    $('#menuList').append('<span id="cre3"><p>+</p></span>')
+                } else if (index === 3 || index === 2) {
+                    index--;
+                }
+                $('#menuList span:eq(0)').attr('id', 'cre1').children('ul').attr('id', 'drop1');
+                $('#menuList span:eq(1)').attr('id', 'cre2').children('ul').attr('id', 'drop2');
+                $('#menuList span:eq(2)').attr('id', 'cre3').children('ul').attr('id', 'drop3');
+                if (index === 1) {
+                    $('#cre1 p').html('添加菜单');
+                }
+                FLAG = 0;
+                console.log($next.find('p'))
+                $next.find('p:first').trigger('click');
+                pageEvents.handler();
+            },
+            /**
+             * 删除二级目录
+             */
+            remove2: function() {
+                var $node = $('.drop li[class=sect]'),
+                    id = $node.parent().attr('id');
+                if ($node.next().text() === '+') {
+                    var $next = $node.prev();
+                } else {
+                    var $next = $node.next();
+                }
+                id = id.split('op')[1];
+                if ($node.parent().children().last().attr('id') === undefined) {
+                    $node.parent().append('<li id="pos' + id + '">+</li>')
+                }
+                $node.remove();
+                $next.trigger('click');
+                $next.parent().show();
+            },
+            /**
+             * 获取表单数据
+             */
+            getInput: function() {
+                console.log(SHOW_FLAG, DONE_FLAG);
+                var name, radio, shuru;
+                var b = this.inspectInput(),
+                    trim = function(str) {　　
+                        return str.replace(/(^\s*)|(\s*$)/g, '');　　
+                    },
+                    ToDBC = function(txtstring) {
+                        var tmp = '';
+                        for (var i = 0; i < txtstring.length; i++) {
+                            if (txtstring.charCodeAt(i) === 32) {
+                                tmp += String.fromCharCode(12288);
+                            }
+                            if (txtstring.charCodeAt(i) < 127) {
+                                tmp += String.fromCharCode(txtstring.charCodeAt(i) + 65248);
+                            } else {
+                                tmp += txtstring[i];
+                            }
+                        }
+                        return tmp;
+                    };
+                if (b === 0) {
+                    $("#info").show();
+                    return false;
+                } else if (SHOW_FLAG === 0) {
+                    $("#info").hide();
+                    name = trim($(".shuru").val());
+                    name = ToDBC(name);
+                    $('#cre' + FOCUS_1 + ' >p').html(name);
+
+                } else if (SHOW_FLAG === 1 && DONE_FLAG === 0) {
+                    $("#info").hide();
+                    name = trim($(".shuru").val());
+                    name = ToDBC(name);
+                    radio = $("input:checked").val();
+                    shuru = $(".details").val();
+                    $('#drop' + FOCUS_1 + ' li[class = sect] p').html(name);
+                    $('#drop' + FOCUS_1 + ' li[class = sect] ins').html(radio);
+                    $('#drop' + FOCUS_1 + ' li[class = sect] sub').html(shuru);
+                } else if (SHOW_FLAG === 1 && DONE_FLAG === 1) {
+                    $("#info").hide();
+                    name = trim($(".shuru").val());
+                    name = ToDBC(name);
+                    radio = $("input:checked").val();
+                    shuru = $(".details").val();
+                    $('#cre' + FOCUS_1 + ' >p').html(name);
+                    $('#cre' + FOCUS_1 + ' >ins').html(radio);
+                    $('#cre' + FOCUS_1 + ' >sub').html(shuru);
+                }
+            },
+            /**
+             * 检查表单数据
+             */
+            inspectInput: function() {
+                var boo = 1;
+                if ($(".shuru").val().length === 0) {
+                    boo = 0;
+                    $("#info").html('名称不能为空');
+                } else if ($(".shuru").val().length > 4 && SHOW_FLAG === 0) {
+                    $("#info").html('名称长度应小于4个字符');
+                    boo = 0;
+                } else if ($(".shuru").val().length > 7 && SHOW_FLAG === 1) {
+                    $("#info").html('名称长度应小于7个字符');
+                    boo = 0;
+                }
+                if (SHOW_FLAG === 1 && DONE_FLAG === 1 && $(".details").val().length === 0) {
+                    boo = 1;
+                } else if (SHOW_FLAG === 1 && $(".details").val().length === 0) {
+                    boo = 0;
+                    $("#info").html('数据不能为空');
+                }
+                return boo;
+            },
+            saveData: function() {
+                var l = $('#menuList span').length,
+                    arr = [];
+                if (l === 1) {
+                    return;
+                } else if (l === 2) {
+                    l = 2;
+                } else if (l === 3 && index === 3) {
+                    l = 3;
+                } else if (l === 3 && index === 4) {
+                    l = 4;
+                }
+                for (var i = 1; i < l; i++) {
+                    var name1 = $('#cre' + i + ' p').html(),
+                        name2 = [],
+                        len = $('#drop' + i + ' li').length;
+                    if ($('#drop' + i).find('li').last().html() === '+') {
+                        len--;
+                    }
+                    if ($('#cre' + i + ' ins').html() != undefined && $('#cre' + i + ' ins').html() != '') {
+                        var t = $('#cre' + i + ' ins').html();
+                        var d = $('#cre' + i + ' sub').html();
+                        var n = $('#cre' + i + ' p').html();
+                        if (t === 'view') {
+                            arr.push({
+                                "name": n,
+                                "type": t,
+                                "url": d
+                            })
+                        } else {
+                            arr.push({
+                                "name": n,
+                                "type": t,
+                                "key": d
+                            })
+                        }
+                        continue;
+                    }
+                    for (var j = 0; j < len; j++) {
+                        var $node = $('#drop' + i + ' li:eq(' + j + ')'),
+                            name = pageEvents.ToCDB($node.children('p').html()),
+                            type = $node.children('ins').html(),
+                            con = $node.children('sub').html();
+                        if (type === 'view') {
+                            name2.push({
+                                "name": name,
+                                "type": type,
+                                "url": con
+                            })
+                        } else {
+                            name2.push({
+                                "name": name,
+                                "type": type,
+                                "key": con
+                            })
+                        }
+                    }
+                    arr.push({
+                        "name": name1,
+                        "sub_button": name2
+                    })
+                }
+                var data = {
+                    "button": arr
+                };
+                data = JSON.stringify(data);
+                data = data.replace(/amp;/g, "");
+                return data;
+            }
+        };
+        ! function() {
+            $.get("ds.php", function(res) {
+                var data = JSON.parse(res);
+                $("#cre1 p").trigger("click");
+                for (var i = 0; i < data.menu.button.length; i++) {
+                    $("#cre" + (i + 1) + " p").trigger("click").html(data.menu.button[i].name);
+                    for (var j = 0; j < data.menu.button[i].sub_button.length; j++) {
+                        var name = data.menu.button[i].sub_button[j].name,
+                            type = data.menu.button[i].sub_button[j].type,
+                            con = (!data.menu.button[i].sub_button[j].url) ? data.menu.button[i].sub_button[j].key : data.menu.button[i].sub_button[j].url,
+                            p = j + 1;
+                        con = con.replace(/amp;/g, '');
+                        $("#pos" + (i + 1)).trigger("click");
+                        $("#drop" + (i + 1) + " li[class = sect] p").html(name).siblings('sub').text(con).siblings('ins').html(type);
+                        if (i === data.menu.button.length - 1 && j === data.menu.button[i].sub_button.length - 1) {
+                            $(".shuru").val(name);
+                            $('.menuName').text(name);
+                            $(".details").val(con);
+                            s = (type === 'click') ? 1 : 0;
+                            $('input:radio[name=datatype]')[s].checked = true;
+                        }
+                    }
+                }
+                $('.triangle' + data.menu.button.length).show();
+            });
+            pageEvents.handler();
+            pageEvents.clickEvent();
+            pageEvents.secHandler();
+            var dragObj = new DragEvent();
+            dragObj.bindEvent();
+        }();
+        ! function() {
+            var canvas = document.querySelector('canvas'),
+                ctx = canvas.getContext('2d');
+            // 鼠标位置初始化
+            var mousePosition = {
+                x: 7 * canvas.width / 10,
+                y: 7 * canvas.height / 10
+            };
+            // 点相关的属性
+            var dots = {
+                nb: 750,
+                distance: 50,
+                d_radius: 100,
+                array: []
+            };
+
+            function colorValue(min) {
+                return Math.floor(Math.random() * 255 + min);
+            }
+            function createColorStyle(r, g, b) {
+                return 'rgba(' + r + ',' + g + ',' + b + ', 0.8)';
+            }
+            function mixComponents(comp1, weight1, comp2, weight2) {
+                return (comp1 * weight1 + comp2 * weight2) / (weight1 + weight2);
+            }
+            function averageColorStyles(dot1, dot2) {
+                var color1 = dot1.color,
+                    color2 = dot2.color;
+                var r = mixComponents(color1.r, dot1.radius, color2.r, dot2.radius),
+                    g = mixComponents(color1.g, dot1.radius, color2.g, dot2.radius),
+                    b = mixComponents(color1.b, dot1.radius, color2.b, dot2.radius);
+                return createColorStyle(Math.floor(r), Math.floor(g), Math.floor(b));
+            }
+            function Color(min) {
+                min = min || 0;
+                this.r = colorValue(min);
+                this.g = colorValue(min);
+                this.b = colorValue(min);
+                this.style = createColorStyle(this.r, this.g, this.b);
+            }
+            function Dot() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+
+                this.vx = -.5 + Math.random();
+                this.vy = -.5 + Math.random();
+
+                this.radius = Math.random() * 2;
+
+                this.color = new Color();
+            }
+            Dot.prototype = {
+                draw: function() {
+                    ctx.beginPath();
+                    ctx.fillStyle = this.color.style;
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                    ctx.fill();
+                }
+            };
+            function createDots() {
+                for (i = 0; i < dots.nb; i++) {
+                    dots.array.push(new Dot());
+                }
+            }
+            function moveDots() {
+                for (i = 0; i < dots.nb; i++) {
+
+                    var dot = dots.array[i];
+
+                    if (dot.y < 0 || dot.y > canvas.height) {
+                        dot.vx = dot.vx;
+                        dot.vy = -dot.vy;
+                    } else if (dot.x < 0 || dot.x > canvas.width) {
+                        dot.vx = -dot.vx;
+                        dot.vy = dot.vy;
+                    }
+                    dot.x += dot.vx;
+                    dot.y += dot.vy;
+                }
+            }
+            function connectDots() {
+                for (i = 0; i < dots.nb; i++) {
+                    for (j = 0; j < dots.nb; j++) {
+                        i_dot = dots.array[i];
+                        j_dot = dots.array[j];
+
+                        if ((i_dot.x - j_dot.x) < dots.distance && (i_dot.y - j_dot.y) < dots.distance && (i_dot.x - j_dot.x) > -dots.distance && (i_dot.y - j_dot.y) > -dots.distance) {
+                            if ((i_dot.x - mousePosition.x) < dots.d_radius && (i_dot.y - mousePosition.y) < dots.d_radius && (i_dot.x - mousePosition.x) > -dots.d_radius && (i_dot.y - mousePosition.y) > -dots.d_radius) {
+                                ctx.beginPath();
+                                ctx.strokeStyle = averageColorStyles(i_dot, j_dot);
+                                ctx.moveTo(i_dot.x, i_dot.y);
+                                ctx.lineTo(j_dot.x, j_dot.y);
+                                ctx.stroke();
+                                ctx.closePath();
+                            }
+                        }
+                    }
+                }
+            }
+
+            function drawDots() {
+                for (i = 0; i < dots.nb; i++) {
+                    var dot = dots.array[i];
+                    dot.draw();
+                }
+            }
+
+            function animateDots() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                moveDots();
+                connectDots();
+                drawDots();
+                requestAnimationFrame(animateDots);
+            }
+            var canvasInit = function() {
+                canvas = document.querySelector('canvas');
+                ctx = canvas.getContext('2d');
+                ctx.lineWidth = .3;
+                ctx.strokeStyle = (new Color(150)).style;
+                $('canvas').on('mousemove', function(e) {
+                    mousePosition.x = e.pageX;
+                    mousePosition.y = e.pageY;
+                });
+
+                $('canvas').on('mouseleave', function(e) {
+                    mousePosition.x = canvas.width * 4 / 5;
+                    mousePosition.y = canvas.height * 4 / 5;
+                });
+
+                createDots();
+                requestAnimationFrame(animateDots);
+            };
+            canvasInit();
+            // $(window).resize(canvasInit);
+        }();
+    });
+    </script>
+</body>
+
+</html>

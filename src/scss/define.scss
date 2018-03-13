@@ -1,0 +1,55 @@
+// 由于adjustPage固定了dpr，所以页面body元素上定义的文字大小全部为12px，但是由于iphone 5的原始dpr为2
+// 所以为了将设计图还原，此处使用两倍基础文字即24px为计算标准
+// 屏幕变化，文字大小一直固定不变
+@function px2em($px, $base-font-size: 24px) {
+  @if (unitless($px)) {
+    @warn 'Assuming #{$px} to be in pixels, attempting to convert it into pixels for you';
+    @return px2em($px + 0px); //That may fail
+  } @else if (unit($px) == em) {
+    @return $px;
+  }
+  @return ($px/$base-font-size)*1em;
+}
+
+@function px2rem($px-values, $baseline-px: 64px, $support-for-ie: false){
+  //Conver the baseline into rems
+  $baseline-rem: $baseline-px/1rem*1;
+  @return $px-values/$baseline-rem;
+}
+// 以iphone 5的设计原稿，640屏幕宽度为计算参考值
+@mixin px2rem($property, $px-values, $baseline-px: 64px, $support-for-ie: false) {
+  //Conver the baseline into rems
+  $baseline-rem: $baseline-px/1rem*1;
+  // Print the first line in pixel values
+  @if $support-for-ie {
+    #{$property}: $px-values;
+  }
+  // if there is only one (numeric) value, return the property/value line for it.
+  @if type-of($px-values) == 'number' {
+    #{$property}: $px-values/$baseline-rem;
+  } @else {
+    // create an empty list that we can dump values into
+    $rem-values: ();
+    @each $value in $px-values{
+      // If the value is zero or not a number, return it
+      @if $value == 0 or type-of($value) != 'number' {
+        $rem-values: append($rem-values, $value);
+      } @else {
+        $rem-values: append($rem-values, $value/$baseline-rem);
+      }
+    }
+    // return the property and its list of converted values
+    #{$property}: $rem-values;
+  }
+}
+// 主题色
+// 页面橙色主题色
+$theme: #F28300;
+// 导航高度
+$headerHt: 68px;
+.content-h{
+  padding-top: $headerHt;
+}
+.content-f{
+  padding-bottom: 90px;
+}
