@@ -3,27 +3,19 @@
 import axios from 'axios'
 // import qs from 'qs'
 
+// 有多个请求地址情况，只有一个时可以直接配置到baseURL
 const _config = {
-  slave: 'http://slave.homed.me', // slave请求地址
-  dtv: 'http://dtv.homed.me', // dtv请求地址
-  access: 'http://access.homed.me' // access请求地址
+  name1: 'http://slave.request.cn', // name1请求地址
+  name2: 'http://dtv.request.cn' // name2请求地址
 }
-// 添加请求拦截器，请求之前对相关参数进行修改
+
+// 添加请求拦截器，请求之前对相关参数进行修改，
 axios.interceptors.request.use(config => {
-  // 在发送请求之前给每个请求拼接一个token，无此参数可去掉此部分
+  // 比如在发送请求之前给每个请求拼接一个token
   const token = localStorage.getItem('token')
   const type = config.method === 'get' ? 'params' : 'data'
-
-  if (config[type]) {
-    if (config[type].accesstoken === 'unwanted') { // 配置不需要token
-      delete config[type].accesstoken
-    } else if (!config[type].accesstoken) { // 配置以config中的token为先
-      config[type].accesstoken = token // 给config添加默认的token
-    }
-  } else {
-    config[type] = { accesstoken: token }
-  }
-
+  // 给config添加默认的token
+  if (config[type]) config[type].token = token
   return config
 }, error => {
   // 对请求错误做些什么
@@ -36,7 +28,7 @@ axios.interceptors.response.use(response => {
   return response
 }, error => {
   console.log(error)
-  // 对响应错误做点什么
+  // 错误仍然返回，
   return Promise.resolve(error.response)
 })
 
@@ -57,21 +49,11 @@ function checkStatus (response, nocheck) {
 
   // 如果http状态码正常，则直接返回数据
   if (response && (response.status === 200 || response.status === 304 || response.status === 400)) {
-    // token失效时跳转到登陆页面，让用户重新登陆
-    if (response.data.ret === 9021 || response.data.ret === 9022) {
-      // Toast('TOKEN失效')
-      localStorage.removeItem('HomedTOKEN')
-      // router.push({path: '/login'})
-    }
+    // 可根据业务返回码进行其他处理
     return response.data
   }
 
-  // 其余情况认为接口异常，给出提示，跳转到登陆页面
-  // Toast('服务器异常')
-  // router.replace({path: '/login'})
-
-  // 异常状态下，把错误信息返回出去
-  // 由于前面页面做了跳转，此部分代码也无实际意义，可去掉
+  // 异常状态下，其他返回码情况把错误信息返回出去
   return {
     status: -404,
     msg: '网络异常'
@@ -93,6 +75,7 @@ function checkCode (res) {
 
 export default {
   // 此处不用Promise封装，调用时直接采用最新的async/await写法即可
+  // 此种axios封装catch部分其实无效，所有消息全部会在then中捕获，不像axios.get或.post提供了catch捕获异常
   /**
    * [get get封装]
    * @param  {[type]} type    [接口的http地址，baseURL有多个时需此参数]
@@ -104,7 +87,7 @@ export default {
   get (http, url, params, nocheck) {
     return axios({
       method: 'get',
-      baseURL: http === 'slave' ? _config.slave : http === 'access' ? _config.access : http === 'dtv' ? _config.dtv : '',
+      baseURL: http === 'name1' ? _config.name1 : http === 'name2' ? _config.name2 : '',
       url,
       params, // get请求时带的参数
       timeout: 10000
@@ -122,10 +105,9 @@ export default {
    * @param  {[boolean]} bfy [是否将json格式字符串数据转化为json格式传送，默认转化]
    */
   post (http, url, data, bfy) {
-    // 此种axios封装catch部分其实无效，所有消息全部会在then中捕获，不像axios.get或.post提供了catch捕获异常
     return axios({
       method: 'post',
-      baseURL: http === 'slave' ? _config.slave : http === 'access' ? _config.access : http === 'dtv' ? _config.dtv : '',
+      baseURL: http === 'name1' ? _config.name1 : http === 'name2' ? _config.name2 : '',
       url,
       data: data, // qs.stringify(data)根据需要是否转化为json字符串
       timeout: 10000,
