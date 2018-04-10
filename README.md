@@ -1,6 +1,6 @@
-# vue-demo
+# vue-mobile-demo
 
-> demo
+> 这是一个基于 vue + axios + mint-ui 的移动端项目基础配置，完成了适配和请求封装。另外，学习写的小组件也放入其中了。
 
 ## Build Setup
 
@@ -19,4 +19,4 @@ npm run build --report
 ```
 
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
-# vue-demo
+# vue-mobile-demo
