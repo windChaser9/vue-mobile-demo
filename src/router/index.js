@@ -4,6 +4,7 @@ import HomeIndex from '@/page/home/homeIndex'
 import MoreIndex from '@/page/more/moreIndex'
 import CellSwipe from '@/page/more/cellSwipe'
 import NetEaseView from '@/page/more/netEaseView'
+
 import UserIndex from '@/page/user/userIndex'
 
 Vue.use(Router)
@@ -56,6 +57,5 @@ export default new Router({
       meta: {
         title: '网易适配测试'
       }
-    }
-  ]
+    }]
 })

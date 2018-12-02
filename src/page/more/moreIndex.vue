@@ -25,9 +25,9 @@ export default {
         enter: '#icon-enter',
         path: '/more/cellSwipe'
       }, {
-        name: '网易适配测试',
+        name: '节流和防抖',
         enter: '#icon-enter',
-        path: '/more/netEaseView'
+        path: '/more/debounce'
       }]
     }
   },

@@ -27,6 +27,7 @@
       class="btn"
       :style="btn.style"
       v-html="btn.content"
+      :key="btn.content"
       @click.stop.prevent="btn.handler && btn.handler(index)"></a>
     </div>
   </div>
